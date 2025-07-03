@@ -7,3 +7,6 @@
 [submodule "ext/sdl"]
 	path = ext/sdl
 	url = git@github.com:libsdl-org/SDL.git
+[submodule "ext/json"]
+	path = ext/json
+	url = git@github.com:nlohmann/json.git
