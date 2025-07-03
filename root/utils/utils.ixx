@@ -1,4 +1,11 @@
+module;
+
+#include <utils/profiler.h>
+uint8_t ProfileLock::semaphore_ = 1; // Necessary to define saveProfiling
+bool ProfileLock::forceLock_ = false;
+
 export module utils;
+import <chrono>;
 
 namespace utils
 {

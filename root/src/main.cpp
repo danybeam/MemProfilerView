@@ -1,8 +1,9 @@
 #include <FWCore.h>
 #include <flecs.h>
 
-uint8_t ProfileLock::semaphore_ = 1; // Necessary to define saveProfiling
-bool ProfileLock::forceLock_ = false;
+#include <utils/profiler.h>
+
+import FilesModule;
 
 int main()
 {
@@ -10,6 +11,8 @@ int main()
     // Double scoped for profiling potential memory leak
     {
         PROFILE_SCOPE_MEMORY("TestMemoryCheck");
+
+        // Initialize framework
         auto framework = fw::FWCore(1280, 720);
 
         switch (framework.Get_errorCodes())
@@ -24,8 +27,17 @@ int main()
         case fw::FWCore::ERRORCODES::NONE:
             break;
         }
-        auto world = std::make_unique<flecs::world>();
 
+        // Set up flecs world
+        auto world = std::make_unique<flecs::world>();
+        // Optional, gather statistics for explorer
+        world->import<flecs::stats>();
+        // Creates REST server on default port (27750)
+        world->set<flecs::Rest>({});
+
+        world->import<memProfileViewer::FilesModule>();
+
+        // Start program
         framework.Run(std::move(world));
     }
     END_SESSION();

@@ -4,7 +4,7 @@
 #include <Clay/clay.h>
 #include <SDL_events.h>
 #include <flecs.h>
-#include <functional>
+#include <memory>
 #include <raylib.h>
 
 namespace flecs

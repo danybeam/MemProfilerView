@@ -18,6 +18,10 @@ file(GLOB ROOT_SRC
 file(GLOB ROOT_HDR
 	"src/*.h"
 )
+# module files
+file(GLOB ROOT_IXX
+	"src/*.ixx"
+)
 
 # Management scripts
 file(GLOB_RECURSE SCRIPTS
@@ -42,6 +46,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
 	PRIVATE FILE_SET CXX_MODULES FILES # Needed for modules
 	${UTILS_MODULES}
+	${ROOT_IXX}
 )
 
 # Separate source groups
@@ -50,6 +55,9 @@ ${ROOT_SRC}
 )
 source_group("hdr" FILES
 ${ROOT_HDR}
+)
+source_group("modules" FILES
+${ROOT_IXX}
 )
 source_group("utils" FILES
 ${UTILS}
@@ -64,12 +72,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 "${PROJECT_SOURCE_DIR}/"
 "${PROJECT_SOURCE_DIR}/root"
 "${PROJECT_SOURCE_DIR}/root/src"
-"${PROJECT_SOURCE_DIR}/ext/flecs/include"
-)
-
-# Set target PCH
-target_precompile_headers(${CMAKE_PROJECT_NAME} PRIVATE
-"utils/profiler.h"
+"${PROJECT_SOURCE_DIR}/ext/flecs/distr"
 )
 
 # Link libraries to .exe

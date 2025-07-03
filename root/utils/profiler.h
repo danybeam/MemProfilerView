@@ -14,7 +14,12 @@
 // You will probably want to macro-fy this, to switch on/off easily and use things like __FUNCSIG__ for the profile name.
 //
 // ReSharper disable CppParameterMayBeConstPtrOrRef
+// ReSharper disable CppClangTidyClangDiagnosticInlineNewDelete
+// ReSharper disable CppParameterNamesMismatch
+// ReSharper disable CppClangTidyCppcoreguidelinesSpecialMemberFunctions
 #pragma once
+#pragma warning(push)
+#pragma warning( disable : 4595)
 
 #include <algorithm>
 #include <chrono>
@@ -38,7 +43,7 @@
 /**
  * Mutex-like object to avoid infinite recursion when calling new or delete
  */
-struct ProfileLock
+struct ProfileLock // NOLINT(cppcoreguidelines-special-member-functions)
 {
     /**
      * ProfileLock constructor, this takes ownership of the lock automatically
@@ -46,18 +51,18 @@ struct ProfileLock
     ProfileLock()
     {
         selfPointer_ = this;
-        std::cout << "Locking profiler " << selfPointer_ << std::endl;
+        std::cout << "Locking profiler " << selfPointer_ << "\n";
         semaphore_--;
-    };
+    }
 
     /**
      * ProfileLock destructor, this releases ownership of the lock automatically
      */
     ~ProfileLock()
     {
-        std::cout << "Unlocking profiler " << selfPointer_ << std::endl;
+        std::cout << "Unlocking profiler " << selfPointer_ << "\n";
         semaphore_++;
-    };
+    }
 
     /**
      * Get the status of forceLock
@@ -238,7 +243,7 @@ public:
 
         m_outputStream_ << "{";
         m_outputStream_ << "\"cat\":\"" << ((profilingData.end >= 0) ? "Deallocated mem" : "Memory leaked") << "\",";
-        m_outputStream_ << "\"dur(ms)\":" << ((profilingData.end >= 0) ? (profilingData.end - profilingData.start) : -1)
+        m_outputStream_ << "\"dur(us)\":" << ((profilingData.end >= 0) ? (profilingData.end - profilingData.start) : -1)
             << ',';
         m_outputStream_ << "\"name\":\"" << profilingData.location << "\",";
         m_outputStream_ << "\"tid\":" << threadId << ",";
@@ -246,7 +251,7 @@ public:
         m_outputStream_ << "\"tEnd\":" << profilingData.end << ",";
         m_outputStream_ << "\"size\":" << profilingData.size << ",";
         m_outputStream_ << "\"callStack\":[";
-        for (int i = 0; i < profilingData.stackTrace.size(); i++)
+        for (size_t i = 0; i < profilingData.stackTrace.size(); i++)
         {
             std::string stackTraceString = std::to_string(profilingData.stackTrace[i]);
             std::ranges::replace(stackTraceString, '\\', '/');
@@ -389,9 +394,9 @@ public:
      * @param name Name of the memory profiler
      */
     explicit InstrumentationMemory(const char* name)
-        : m_name_(name), m_stopped_(false)
+        : m_stopped_(false)
     {
-        Instrumentor::Get().RegisterInstrumentation(this);
+        Instrumentor::RegisterInstrumentation(this);
     }
 
     /**
@@ -461,7 +466,6 @@ private:
     /**
      * Name of the memory profiler.
      */
-    const char* m_name_;
     /**
      * map to track the memory being allocated, deallocated and leaked.
      */
@@ -480,14 +484,14 @@ private:
  * These functions try to do the same things but injecting the profiling tools into them.
  */
 // ReSharper disable once CppInconsistentNaming
-inline void* operator new(size_t _Size)
+inline void* operator new(size_t size)
 {
-    if (_Size == 0)
+    if (size == 0)
     {
-        _Size++;
+        size++;
     }
 
-    void* ptr = std::malloc(_Size);
+    void* ptr = std::malloc(size);
 
     if (ptr == nullptr)
     {
@@ -499,21 +503,21 @@ inline void* operator new(size_t _Size)
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             // Because there's no guarantee there will already be an instrumentor active
-            memoryInstrumentation->Register_push(ptr, _Size, false);
-        std::cout << "Allocated memory for variable at " << _Size << " at " << ptr << std::endl;
+            memoryInstrumentation->Register_push(ptr, size, false);
+        std::cout << "Allocated memory for variable at " << size << " at " << ptr << "\n";
     }
     return ptr;
 }
 
 // ReSharper disable once CppInconsistentNaming
-inline void* operator new[](size_t _Size)
+inline void* operator new[](size_t size)
 {
-    if (_Size == 0)
+    if (size == 0)
     {
-        _Size++;
+        size++;
     }
 
-    void* ptr = std::malloc(_Size);
+    void* ptr = std::malloc(size);
 
     if (ptr == nullptr)
     {
@@ -525,48 +529,48 @@ inline void* operator new[](size_t _Size)
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             // Because there's no guarantee there will already be an instrumentor active
-            memoryInstrumentation->Register_push(ptr, _Size, true);
-        std::cout << "Allocated memory for array at " << _Size << " at " << ptr << std::endl;
+            memoryInstrumentation->Register_push(ptr, size, true);
+        std::cout << "Allocated memory for array at " << size << " at " << ptr << "\n";
     }
     return ptr;
 }
 
 // ReSharper disable once CppInconsistentNaming
-inline void* operator new(const size_t _Size, const std::nothrow_t& tag) noexcept
+inline void* operator new(const size_t size, const std::nothrow_t& tag) noexcept
 {
-    void* ptr = std::malloc(_Size);
+    void* ptr = std::malloc(size);
 
     if (ProfileLock::GetSaveProfiling() && !ProfileLock::GetForceLock())
     {
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             // Because there's no guarantee there will already be an instrumentor active
-            memoryInstrumentation->Register_push(ptr, ptr ? _Size : 0, false);
-        std::cout << "Allocated memory for variable noexcept at " << _Size << " at " << ptr << std::endl;
+            memoryInstrumentation->Register_push(ptr, ptr ? size : 0, false);
+        std::cout << "Allocated memory for variable noexcept at " << size << " at " << ptr << "\n";
     }
     return ptr;
 }
 
 // ReSharper disable once CppInconsistentNaming
-inline void* operator new[](const size_t _Size, const std::nothrow_t& tag) noexcept
+inline void* operator new[](const size_t size, const std::nothrow_t& tag) noexcept
 {
-    void* ptr = std::malloc(_Size);
+    void* ptr = std::malloc(size);
 
     if (ProfileLock::GetSaveProfiling() && !ProfileLock::GetForceLock())
     {
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             // Because there's no guarantee there will already be an instrumentor active
-            memoryInstrumentation->Register_push(ptr, ptr ? _Size : 0, true);
-        std::cout << "Allocated memory for array noexcept at " << _Size << " at " << ptr << std::endl;
+            memoryInstrumentation->Register_push(ptr, ptr ? size : 0, true);
+        std::cout << "Allocated memory for array noexcept at " << size << " at " << ptr << "\n";
     }
     return ptr;
 }
 
 // ReSharper disable once CppInconsistentNaming
-inline void operator delete(void* _Block)
+inline void operator delete(void* block) noexcept
 {
-    if (_Block == nullptr)
+    if (block == nullptr)
     {
         return;
     }
@@ -575,18 +579,18 @@ inline void operator delete(void* _Block)
     {
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
-            memoryInstrumentation->Register_pop(_Block);
-        std::cout << "deleted variable at " << _Block << std::endl;
+            memoryInstrumentation->Register_pop(block);
+        std::cout << "deleted variable at " << block << "\n";
     }
 
-    std::free(_Block);
-    _Block = nullptr;
+    std::free(block);
+    block = nullptr;
 }
 
 // ReSharper disable once CppInconsistentNaming
-inline void operator delete[](void* _Block)
+inline void operator delete[](void* block) noexcept
 {
-    if (_Block == nullptr)
+    if (block == nullptr)
     {
         return;
     }
@@ -595,18 +599,18 @@ inline void operator delete[](void* _Block)
     {
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
-            memoryInstrumentation->Register_pop(_Block);
-        std::cout << "deleted array at " << _Block << std::endl;
+            memoryInstrumentation->Register_pop(block);
+        std::cout << "deleted array at " << block << "\n";
     }
 
-    std::free(_Block);
-    _Block = nullptr;
+    std::free(block);
+    block = nullptr;
 }
 
 // ReSharper disable once CppInconsistentNaming
-inline void operator delete(void* _Block, const std::nothrow_t& tag) noexcept
+inline void operator delete(void* block, const std::nothrow_t& tag) noexcept
 {
-    if (_Block == nullptr)
+    if (block == nullptr)
     {
         return;
     }
@@ -615,18 +619,18 @@ inline void operator delete(void* _Block, const std::nothrow_t& tag) noexcept
     {
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
-            memoryInstrumentation->Register_pop(_Block);
-        std::cout << "deleted variable noexcept at " << _Block << std::endl;
+            memoryInstrumentation->Register_pop(block);
+        std::cout << "deleted variable noexcept at " << block << "\n";
     }
 
-    std::free(_Block);
-    _Block = nullptr;
+    std::free(block);
+    block = nullptr;
 }
 
 // ReSharper disable once CppInconsistentNaming
-inline void operator delete[](void* _Block, const std::nothrow_t& tag) noexcept
+inline void operator delete[](void* block, const std::nothrow_t& tag) noexcept
 {
-    if (_Block == nullptr)
+    if (block == nullptr)
     {
         return;
     }
@@ -635,12 +639,12 @@ inline void operator delete[](void* _Block, const std::nothrow_t& tag) noexcept
     {
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
-            memoryInstrumentation->Register_pop(_Block);
-        std::cout << "deleted array noexcept at " << _Block << std::endl;
+            memoryInstrumentation->Register_pop(block);
+        std::cout << "deleted array noexcept at " << block << "\n";
     }
 
-    std::free(_Block);
-    _Block = nullptr;
+    std::free(block);
+    block = nullptr;
 }
 
 
@@ -662,3 +666,4 @@ inline void operator delete[](void* _Block, const std::nothrow_t& tag) noexcept
 #define START_SESSION(name)
 #define END_SESSION()
 #endif
+#pragma warning(pop)
