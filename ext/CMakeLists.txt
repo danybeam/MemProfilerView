@@ -14,3 +14,6 @@ option(FLECS_SHARED "Build shared flecs lib" OFF)
 option(FLECS_PIC "Compile static flecs lib with position independent code (PIC)" ON)
 option(FLECS_TESTS "Build flecs tests" OFF)
 add_subdirectory("flecs")
+
+message(STATUS "Adding json")
+add_subdirectory("json")

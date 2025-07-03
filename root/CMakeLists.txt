@@ -80,6 +80,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
 	raylib
 	SDL3::SDL3 # the ext CMakeLists specifies raylib to compile using SDL publicly but here we're linking it directly to avoid potential breaking changes 
 	flecs_static
+	nlohmann_json::nlohmann_json
 )
 
 # set CPP version

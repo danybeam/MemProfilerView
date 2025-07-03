@@ -9,9 +9,13 @@ export module FilesModule;
 // System headers
 import <fstream>;
 import <string>;
+import <vector>;
 
 // Lib and internal headers
 import <raylib.h>;
+import <nlohmann/json.hpp>;
+
+using json = nlohmann::json;
 
 /**
  * Namespace for the project
@@ -28,13 +32,45 @@ export namespace memProfileViewer
         FilesModule(const flecs::world& world);
     };
 
+    enum class CATEGORY
+    {
+        NONE,
+        DEALLOCATED,
+        MEM_LEAK
+    };
+
+    struct Memory_TraceEntry
+    {
+        CATEGORY category = CATEGORY::NONE;
+        double duration = -1.0; // In millisecondss in memory but microseconds in the file.
+        std::string memLocation = "";
+        unsigned long long threadId = 0;
+        unsigned long long memSize = 0;
+        std::vector<std::string> callstack = {};
+
+        Memory_TraceEntry() = default;
+
+        Memory_TraceEntry(CATEGORY category, double duration, const std::string& memLocation,
+                          unsigned long long threadId,
+                          unsigned long long memSize, const std::vector<std::string>& callstack) :
+            category(category),
+            duration(duration),
+            memLocation(memLocation),
+            threadId(threadId),
+            memSize(memSize),
+            callstack(callstack)
+        {
+        }
+    };
+
     /**
      * Component to hold the file dropped into the window.
      */
     struct File_Holder
     {
         std::string name; /**< Name of the file */
-        std::ofstream file; /**< handler of the file stream */
+        std::ifstream file; /**< handler of the file stream */
+        std::vector<Memory_TraceEntry> entries; /**< Entries in the file */
 
         /**
          * Destructor to ensure file is closed properly
@@ -45,30 +81,6 @@ export namespace memProfileViewer
                 file.close();
         }
     };
-
-    struct Memory_TraceEntry
-    {
-        enum class CATEGORY
-        {
-            DEALLOCATED,
-            MEM_LEAK
-        };
-
-        CATEGORY category;
-        double duration; // In millisecondss in memory but microseconds in the file.
-        std::string         
-    };
-
-    /*{
-        "cat": "Deallocated mem",
-        "dur(ms)": 3494907,
-        "name": "000001CBFC1425D0",
-        "tid": 3318535762,
-        "tStart": 525613139467,
-        "tEnd": 525616634374,
-        "size": 8,
-        "callStack": []
-    }*/
 }
 
 module :private;
@@ -118,4 +130,31 @@ void checkFileDropped(flecs::iter& it, size_t, memProfileViewer::File_Holder& fi
 
     file.name = filepath;
     file.file.open(filepath);
+    auto json = json::parse(file.file);
+    auto traceEvents = json["traceEvents"];
+
+    if (!file.entries.empty())
+    {
+        file.entries.clear();
+    }
+
+    for (size_t i = 0; i < traceEvents.size(); ++i)
+    {
+        // (CATEGORY category, double duration, std::string& memLocation,
+        // unsigned long long threadId, unsigned long long memSize, int vectorSize)
+        memProfileViewer::CATEGORY category = traceEvents[i]["cat"].get<std::string>().find("Deallocated") !=
+                                              std::string::npos
+                                                  ? memProfileViewer::CATEGORY::DEALLOCATED
+                                                  : memProfileViewer::CATEGORY::MEM_LEAK;
+
+
+        file.entries.emplace_back(
+            category,
+            traceEvents[i]["dur(us)"].get<unsigned long long>() / 1000.0,
+            traceEvents[i]["name"].get<std::string>(),
+            traceEvents[i]["tid"].get<unsigned long long>(),
+            traceEvents[i]["size"].get<unsigned long long>(),
+            traceEvents[i]["callStack"].get<std::vector<std::string>>()
+        );
+    }
 }
