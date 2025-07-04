@@ -1,6 +1,8 @@
 ﻿module;
+
+// Includes that don't play as nicely with the import mechanics
 #include <flecs.h>;
-#include "utils/profiler.h"
+#include <utils/profiler.h>
 #include <raylib.h>;
 
 #pragma warning( push, 0 )
@@ -9,19 +11,30 @@
 
 export module ProfilingRenderer;
 
+import <Font.h>;
+
 import FilesModule;
 import IOState;
 
-import <Font.h>;
-
 export namespace memProfileViewer
 {
+    /**
+     * Declaration of the module to render the profiling results
+     */
     class RenderingModule
     {
     public:
+        /**
+         * Constructor to be used with flecs import
+         * @param world reference of the flecs world to register the module on
+         */
         RenderingModule(const flecs::world& world);
     };
 
+    /**
+     * Flecs tag to request that the results are rendered.
+     * It is added by default by the module but in theory it could be removed.
+     */
     struct RenderResults
     {
     };
@@ -30,8 +43,18 @@ export namespace memProfileViewer
 module :private;
 
 // forward declarations
+/**
+ * Private callback for the flecs system to render the results of the file
+ * @param it flecs iterator
+ * @param file component holding the file data
+ * @param ioState_component component holding the state and the target of the IO devices
+ */
 void renderFileResults(flecs::iter& it, size_t, memProfileViewer::File_Holder& file,
                        memProfileViewer::IOState_Component& ioState_component);
+
+/**
+ * Temporary(?) cache of textures representing the bars depending on how long it was allocated for
+ */
 static std::unordered_map<double, Texture> cachedImages;
 
 memProfileViewer::RenderingModule::RenderingModule(const flecs::world& world)
@@ -73,6 +96,7 @@ void renderFileResults(flecs::iter& it, size_t, memProfileViewer::File_Holder& f
     text.length = file.name.length();
 
     // TODO(danybeam) scrolling is very slow and choppy. Add tweening first see if it fixes the choppiness
+    // TODO(danybeam) move image cache to component and attach to singleton 
     CLAY(t_baseFrame)
     {
         unsigned char blue = 0;

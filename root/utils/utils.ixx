@@ -9,7 +9,11 @@ import <chrono>;
 
 namespace utils
 {
-    export double getSystemTimeSinceGameStart()
+    /**
+     * Utility function to get the time the program has been running
+     * @return How long the program has been running in seconds
+     */
+    export double getSystemTimeSinceProgramStart()
     {
         static bool hasInitialized = false;
         static std::chrono::steady_clock::time_point startTime = {};

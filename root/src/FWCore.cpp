@@ -54,11 +54,11 @@ uint32_t fw::FWCore::Run(std::unique_ptr<flecs::world>&& world)
             .kind(flecs::OnStore)
             .each(&Clay_endDrawing);
 
-    double lastTime = utils::getSystemTimeSinceGameStart();
+    double lastTime = utils::getSystemTimeSinceProgramStart();
     double currentTime = lastTime;
     float deltaTime = 0;
     bool flecsProgress = true;
-    
+
     do
     {
         // Calculate delta time
@@ -194,10 +194,10 @@ bool fw::FWCore::ProcessSDLEvent(SDL_Event* event)
 
 void fw::FWCore::Clay_updateIOState(flecs::iter& iter, size_t, memProfileViewer::IOState_Component& ioState_component)
 {
-    ioState_component.mouse_wheel += this->m_mouse_wheel_*10;
+    ioState_component.mouse_wheel += this->m_mouse_wheel_ * 10;
     // ioState_component.mouse_wheel.Clamp(-0.1f,1200.0f);
 
-    this->m_mouse_wheel_ = {0,0};
+    this->m_mouse_wheel_ = {0, 0};
 }
 
 void fw::FWCore::Clay_startDrawing(flecs::iter& iter, size_t)

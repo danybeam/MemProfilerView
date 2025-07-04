@@ -153,8 +153,24 @@ namespace fw
          */
         bool ProcessSDLEvent(SDL_Event* event);
 
+        /**
+         * Flecs system callback to update the state of IO devices for Clay's consumption in other modules.
+         * @param iter flecs iterator
+         * @param ioState_component component containing the information regarding the state of IO devices 
+         */
         void Clay_updateIOState(flecs::iter& iter, size_t, memProfileViewer::IOState_Component& ioState_component);
+
+        /**
+         * Flecs system callback to start registering Clay render commands
+         * @param iter flecs iterator
+         */
         static void Clay_startDrawing(flecs::iter& iter, size_t);
+
+        /**
+         * Flecs system callback to actualize all the render commands and render with raylib
+         * @param iter flecs iterator
+         * @param fonts Reference to the fonts to use for rendering.
+         */
         static void Clay_endDrawing(flecs::iter& iter, size_t, const LoadedFonts& fonts);
 
         /**
@@ -229,6 +245,9 @@ namespace fw
          */
         uint8_t m_errorCodes_;
 
+        /**
+         * Array of loaded fonts to use while rendering text
+         */
         Font m_clay_font_[12];
 
         /**

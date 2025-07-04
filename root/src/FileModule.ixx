@@ -29,27 +29,50 @@ export namespace memProfileViewer
     {
     public:
         // ReSharper disable once CppNonExplicitConvertingConstructor
+        /**
+         * Constructor for use with flecs import
+         * @param world reference to the world where the module is to be registered
+         */
         FilesModule(const flecs::world& world);
     };
 
+    /**
+     * Enum for categories of memory allocations
+     */
     enum class CATEGORY
     {
-        NONE,
+        UNKNOWN,
         DEALLOCATED,
         MEM_LEAK
     };
 
+    /**
+     * Data structure to hold the data of memory trace entries.
+     */
     struct Memory_TraceEntry
     {
-        CATEGORY category = CATEGORY::NONE;
-        double duration = -1.0; // In milliseconds in memory but microseconds in the file.
-        std::string memLocation = "";
-        unsigned long long threadId = 0;
-        unsigned long long memSize = 0;
-        std::vector<std::string> callstack = {};
+        CATEGORY category = CATEGORY::UNKNOWN; /**< The category of the data entry */
+        double duration = -1.0;
+        /**< How long the memory was allocated for. @remark In milliseconds in memory but microseconds in the file.*/
+        std::string memLocation = ""; /**< memory address of what was allocated */
+        unsigned long long threadId = 0; /**< ID of the thread that caused the allocation */
+        unsigned long long memSize = 0; /**< How much memory was allocated */
+        std::vector<std::string> callstack = {}; /**< The callstack at the moment of the allocation. */
 
+        /**
+         * default constructor for array creation/vector reservations
+         */
         Memory_TraceEntry() = default;
 
+        /**
+         * Constructor to construct the entries (mostly) in place
+         * @param category The category of the allocation
+         * @param duration how long was the memory allocated
+         * @param memLocation Where the memory was allocated
+         * @param threadId the ID the memory was allocated at
+         * @param memSize how much memory was allocated
+         * @param callstack The callstack at the moment of the allocation
+         */
         Memory_TraceEntry(CATEGORY category, double duration, const std::string& memLocation,
                           unsigned long long threadId,
                           unsigned long long memSize, const std::vector<std::string>& callstack) :
@@ -85,6 +108,11 @@ export namespace memProfileViewer
 
 module :private;
 // private forward declarations
+/**
+ * private callback for flecs system to check whether a new file got dropped into the window and load the data.
+ * @param it flecs iterator
+ * @param file component holding the file information
+ */
 void checkFileDropped(flecs::iter& it, size_t, memProfileViewer::File_Holder& file);
 
 // Module implementations
@@ -115,7 +143,7 @@ void checkFileDropped(flecs::iter& it, size_t, memProfileViewer::File_Holder& fi
     {
         return;
     }
-    
+
     auto filePaths = LoadDroppedFiles();
     if (filePaths.count == 0)
     {
