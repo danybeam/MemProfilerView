@@ -4,6 +4,7 @@
 #include <utils/profiler.h>
 
 import FilesModule;
+import ProfilingRenderer;
 
 int main()
 {
@@ -36,6 +37,8 @@ int main()
         world->set<flecs::Rest>({});
 
         world->import<memProfileViewer::FilesModule>();
+        world->import<memProfileViewer::RenderingModule>();
+        world->import<memProfileViewer::IOStateModule>();
 
         // Start program
         framework.Run(std::move(world));

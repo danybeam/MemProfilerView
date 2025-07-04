@@ -1,6 +1,3 @@
-#define CLAY_IMPLEMENTATION
-#define RAYMATH_IMPLEMENTATION
-
 #include <raylib.h>
 #include <raymath.h>
 #include <stdint.h>

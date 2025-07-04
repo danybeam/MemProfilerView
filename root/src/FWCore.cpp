@@ -1,15 +1,20 @@
 ﻿#include "FWCore.h"
 
 #pragma warning( push, 0 )
+#define CLAY_IMPLEMENTATION
+#define RAYMATH_IMPLEMENTATION
+
 #include <Clay/clay.h>
 #include <Clay/clay_renderer_raylib.cpp>  // NOLINT(bugprone-suspicious-include)
 #pragma warning( pop )
 
+#include <flecs.h>
 #include <iostream>
 #include <SDL.h>
 
-#include "Font.h"
 import utils;
+import ProfilingRenderer;
+import IOState;
 
 fw::FWCore::FWCore(uint32_t width, uint32_t height) :
     m_errorCodes_(NONE),
@@ -28,55 +33,32 @@ uint32_t fw::FWCore::Run(std::unique_ptr<flecs::world>&& world)
 {
     m_world_ = std::move(world);
 
+    // This needs to be added during run to ensure the fonts are loaded properly
+    m_world_->emplace<LoadedFonts>(m_clay_font_);
+
+    m_world_->system<memProfileViewer::IOState_Component>()
+            .term_at(0).singleton()
+            .kind(flecs::OnLoad)
+            .each(
+                [=](flecs::iter& iter, size_t row, memProfileViewer::IOState_Component& ioState_component)
+                {
+                    this->Clay_updateIOState(iter, row, ioState_component);
+                });
+
+    m_world_->system("Start drawing")
+            .kind(flecs::PostLoad)
+            .each(&Clay_startDrawing);
+
+    m_world_->system<const LoadedFonts>("End Drawing")
+            .term_at(0).singleton()
+            .kind(flecs::OnStore)
+            .each(&Clay_endDrawing);
+
     double lastTime = utils::getSystemTimeSinceGameStart();
     double currentTime = lastTime;
     float deltaTime = 0;
-
-    // TODO(Implementation) This needs to be yanked out
-    // TODO(Implementation) Implement flecs modules in project
-    // TODO(Implementation) Do world setup in main before calling this function
-    m_world_->system().run(
-        [=](flecs::iter& it)
-        {
-            Clay_ElementDeclaration t_baseFrame = {};
-            t_baseFrame.id = CLAY_ID("BaseFrame");
-            t_baseFrame.backgroundColor = {.r = 0, .g = 0, .b = 0, .a = 255};
-            t_baseFrame.layout.sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_GROW()};
-            t_baseFrame.layout.layoutDirection = CLAY_TOP_TO_BOTTOM;
-
-            Clay_BeginLayout();
-
-            CLAY(t_baseFrame)
-            {
-                CLAY_TEXT(
-                    CLAY_STRING(
-                        "This is a sample screen to test compilation and basic functionality. check FWCore.cpp to remove this and check the TODO(Implementation) comments."
-                    ),
-                    CLAY_TEXT_CONFIG(
-                        {
-                        .userData = nullptr,
-                        .textColor = {255,255,0,255},
-                        .fontId = FONT_WEIGHT::FONT_REGULAR ,
-                        .fontSize = 32,
-                        .letterSpacing = 0,
-                        .lineHeight = 0,
-                        .wrapMode = CLAY_TEXT_WRAP_WORDS,
-                        .textAlignment = CLAY_TEXT_ALIGN_CENTER,
-                        }
-
-                    )
-                );
-            }
-
-            auto clay_RenderCommandArray = Clay_EndLayout();
-
-            BeginDrawing();
-            ClearBackground({255, 255, 255, 255});
-            Clay_Raylib_Render(clay_RenderCommandArray, m_clay_font_);
-            EndDrawing();
-        }
-    );
-
+    bool flecsProgress = true;
+    
     do
     {
         // Calculate delta time
@@ -89,8 +71,8 @@ uint32_t fw::FWCore::Run(std::unique_ptr<flecs::world>&& world)
         for (int i = 0; i < 3; i++)
             m_old_mouse_button_states_[i] = m_mouse_button_states_[i];
 
-        // Reset mouse wheel scroll
-        m_mouse_wheel_ = 0;
+        // update the world before resetting the mouse wheel.
+        // I really didn't want to make a whole new system just for that.
     }
     while (!WindowShouldClose() && m_world_->progress(deltaTime));
 
@@ -147,7 +129,6 @@ bool fw::FWCore::InitClay()
 
     Clay_Initialize(m_clay_memoryArena_, m_clay_resolution_, m_clay_errorHandler_);
     Clay_SetMeasureTextFunction(Raylib_MeasureText, m_clay_font_);
-
     return true;
 }
 
@@ -195,13 +176,41 @@ bool fw::FWCore::ProcessSDLEvent_wrapper(void* userData, SDL_Event* event)
 // ReSharper disable once CppMemberFunctionMayBeStatic
 bool fw::FWCore::ProcessSDLEvent(SDL_Event* event)
 {
-    // TODO(Implementation) Do your event processing here
     switch (event->type)
     {
+    case SDL_EVENT_MOUSE_WHEEL:
+        SDL_Log("SDL_EVENT_MOUSE_WHEEL");
+        SDL_Log("x %f y %f flipped", event->wheel.x, event->wheel.y, event->wheel.direction);
+        m_mouse_wheel_.x += event->wheel.x;
+        m_mouse_wheel_.y += event->wheel.y;
+        break;
     default:
         SDL_Log("Unknown Event");
         break;
     }
 
     return true;
+}
+
+void fw::FWCore::Clay_updateIOState(flecs::iter& iter, size_t, memProfileViewer::IOState_Component& ioState_component)
+{
+    ioState_component.mouse_wheel += this->m_mouse_wheel_*10;
+    // ioState_component.mouse_wheel.Clamp(-0.1f,1200.0f);
+
+    this->m_mouse_wheel_ = {0,0};
+}
+
+void fw::FWCore::Clay_startDrawing(flecs::iter& iter, size_t)
+{
+    Clay_BeginLayout();
+    BeginDrawing();
+    ClearBackground({255, 255, 255, 255});
+}
+
+void fw::FWCore::Clay_endDrawing(flecs::iter& iter, size_t, const LoadedFonts& fonts)
+{
+    auto clay_RenderCommandArray = Clay_EndLayout();
+
+    Clay_Raylib_Render(clay_RenderCommandArray, fonts.fonts);
+    EndDrawing();
 }

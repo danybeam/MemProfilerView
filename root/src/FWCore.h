@@ -7,11 +7,8 @@
 #include <memory>
 #include <raylib.h>
 
-namespace flecs
-{
-    // ReSharper disable once CppInconsistentNaming
-    struct world;
-}
+import IOState;
+import Maths;
 
 /**
  * @nosubgrouping
@@ -22,6 +19,15 @@ namespace flecs
  */
 namespace fw
 {
+    struct LoadedFonts
+    {
+        /**
+        * Store the loaded fonts in memory.
+        * It has enough capacity for each font weight in both normal and italic variants. 
+        */
+        Font* fonts;
+    };
+
     /**
      * Core version of the framework.
      * As of right now this should be multiplatform but if OS specific implementations are required
@@ -147,6 +153,10 @@ namespace fw
          */
         bool ProcessSDLEvent(SDL_Event* event);
 
+        void Clay_updateIOState(flecs::iter& iter, size_t, memProfileViewer::IOState_Component& ioState_component);
+        static void Clay_startDrawing(flecs::iter& iter, size_t);
+        static void Clay_endDrawing(flecs::iter& iter, size_t, const LoadedFonts& fonts);
+
         /**
          * @}
          *
@@ -219,6 +229,8 @@ namespace fw
          */
         uint8_t m_errorCodes_;
 
+        Font m_clay_font_[12];
+
         /**
          * @}
          *
@@ -241,7 +253,7 @@ namespace fw
         /**
          * How much the mouse wheel got displaced.
          */
-        float m_mouse_wheel_ = 0;
+        memProfileViewer::Vector2 m_mouse_wheel_ = {0,0};
         /**
          * The state of the keys the frame before
          */
@@ -266,11 +278,6 @@ namespace fw
          * Background color when clearing the frame
          */
         Color m_raylib_clearColour_ = {255, 255, 255, 255};
-        /**
-         * Store the loaded fonts in memory.
-         * It has enough capacity for each font weight in both normal and italic variants. 
-         */
-        Font m_clay_font_[12];
 
         // Window members
         /**

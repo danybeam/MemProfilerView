@@ -1,5 +1,5 @@
 ﻿#pragma once
-enum FONT_WEIGHT : uint8_t  // NOLINT(readability-enum-initial-value)
+enum FONT_WEIGHT : char  // NOLINT(readability-enum-initial-value)
 {
     FONT_EXTRALIGHT = 0,
     FONT_ITALIC = 1,

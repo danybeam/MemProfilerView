@@ -51,7 +51,7 @@ struct ProfileLock // NOLINT(cppcoreguidelines-special-member-functions)
     ProfileLock()
     {
         selfPointer_ = this;
-        std::cout << "Locking profiler " << selfPointer_ << "\n";
+        // std::cout << "Locking profiler " << selfPointer_ << "\n";
         semaphore_--;
     }
 
@@ -60,7 +60,7 @@ struct ProfileLock // NOLINT(cppcoreguidelines-special-member-functions)
      */
     ~ProfileLock()
     {
-        std::cout << "Unlocking profiler " << selfPointer_ << "\n";
+        // std::cout << "Unlocking profiler " << selfPointer_ << "\n";
         semaphore_++;
     }
 
@@ -419,7 +419,7 @@ public:
             Instrumentor::Get().WriteProfile(profileResult);
         }
 
-        std::cout << "Profiling stopped\n";
+        // std::cout << "Profiling stopped\n";
         m_stopped_ = true;
     }
 
@@ -453,6 +453,7 @@ public:
     {
         if (m_stopped_) return;
 
+        // TODO(danybeam) this explodes when closing
         if (const auto findResult = m_results_.find(address); findResult != m_results_.end())
         {
             findResult->second.end = std::chrono::time_point_cast<std::chrono::microseconds>(
@@ -504,7 +505,7 @@ inline void* operator new(size_t size)
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             // Because there's no guarantee there will already be an instrumentor active
             memoryInstrumentation->Register_push(ptr, size, false);
-        std::cout << "Allocated memory for variable at " << size << " at " << ptr << "\n";
+        // std::cout << "Allocated memory for variable at " << size << " at " << ptr << "\n";
     }
     return ptr;
 }
@@ -530,7 +531,7 @@ inline void* operator new[](size_t size)
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             // Because there's no guarantee there will already be an instrumentor active
             memoryInstrumentation->Register_push(ptr, size, true);
-        std::cout << "Allocated memory for array at " << size << " at " << ptr << "\n";
+        // std::cout << "Allocated memory for array at " << size << " at " << ptr << "\n";
     }
     return ptr;
 }
@@ -546,7 +547,7 @@ inline void* operator new(const size_t size, const std::nothrow_t& tag) noexcept
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             // Because there's no guarantee there will already be an instrumentor active
             memoryInstrumentation->Register_push(ptr, ptr ? size : 0, false);
-        std::cout << "Allocated memory for variable noexcept at " << size << " at " << ptr << "\n";
+        // std::cout << "Allocated memory for variable noexcept at " << size << " at " << ptr << "\n";
     }
     return ptr;
 }
@@ -562,7 +563,7 @@ inline void* operator new[](const size_t size, const std::nothrow_t& tag) noexce
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             // Because there's no guarantee there will already be an instrumentor active
             memoryInstrumentation->Register_push(ptr, ptr ? size : 0, true);
-        std::cout << "Allocated memory for array noexcept at " << size << " at " << ptr << "\n";
+        // std::cout << "Allocated memory for array noexcept at " << size << " at " << ptr << "\n";
     }
     return ptr;
 }
@@ -580,7 +581,7 @@ inline void operator delete(void* block) noexcept
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             memoryInstrumentation->Register_pop(block);
-        std::cout << "deleted variable at " << block << "\n";
+        // std::cout << "deleted variable at " << block << "\n";
     }
 
     std::free(block);
@@ -600,7 +601,7 @@ inline void operator delete[](void* block) noexcept
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             memoryInstrumentation->Register_pop(block);
-        std::cout << "deleted array at " << block << "\n";
+        // std::cout << "deleted array at " << block << "\n";
     }
 
     std::free(block);
@@ -620,7 +621,7 @@ inline void operator delete(void* block, const std::nothrow_t& tag) noexcept
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             memoryInstrumentation->Register_pop(block);
-        std::cout << "deleted variable noexcept at " << block << "\n";
+        // std::cout << "deleted variable noexcept at " << block << "\n";
     }
 
     std::free(block);
@@ -640,7 +641,7 @@ inline void operator delete[](void* block, const std::nothrow_t& tag) noexcept
         ProfileLock lock;
         if (const auto memoryInstrumentation = Instrumentor::GetCurrentMemoryInstrumentation())
             memoryInstrumentation->Register_pop(block);
-        std::cout << "deleted array noexcept at " << block << "\n";
+        // std::cout << "deleted array noexcept at " << block << "\n";
     }
 
     std::free(block);

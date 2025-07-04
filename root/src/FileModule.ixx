@@ -42,7 +42,7 @@ export namespace memProfileViewer
     struct Memory_TraceEntry
     {
         CATEGORY category = CATEGORY::NONE;
-        double duration = -1.0; // In millisecondss in memory but microseconds in the file.
+        double duration = -1.0; // In milliseconds in memory but microseconds in the file.
         std::string memLocation = "";
         unsigned long long threadId = 0;
         unsigned long long memSize = 0;
@@ -115,7 +115,7 @@ void checkFileDropped(flecs::iter& it, size_t, memProfileViewer::File_Holder& fi
     {
         return;
     }
-
+    
     auto filePaths = LoadDroppedFiles();
     if (filePaths.count == 0)
     {

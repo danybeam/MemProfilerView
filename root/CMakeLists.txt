@@ -19,7 +19,7 @@ file(GLOB ROOT_HDR
 	"src/*.h"
 )
 # module files
-file(GLOB ROOT_IXX
+file(GLOB_RECURSE ROOT_IXX
 	"src/*.ixx"
 )
 
