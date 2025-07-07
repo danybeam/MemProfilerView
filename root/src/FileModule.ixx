@@ -178,7 +178,7 @@ void checkFileDropped(flecs::iter& it, size_t, memProfileViewer::File_Holder& fi
 
         file.entries.emplace_back(
             category,
-            traceEvents[i]["dur(us)"].get<unsigned long long>() / 1000.0,
+            traceEvents[i]["dur(us)"].get<long long>() / 1000.0,
             traceEvents[i]["name"].get<std::string>(),
             traceEvents[i]["tid"].get<unsigned long long>(),
             traceEvents[i]["size"].get<unsigned long long>(),

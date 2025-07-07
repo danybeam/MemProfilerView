@@ -9,6 +9,7 @@
 
 import IOState;
 import Maths;
+import ProfilingRenderer;
 
 /**
  * @nosubgrouping
@@ -19,15 +20,6 @@ import Maths;
  */
 namespace fw
 {
-    struct LoadedFonts
-    {
-        /**
-        * Store the loaded fonts in memory.
-        * It has enough capacity for each font weight in both normal and italic variants. 
-        */
-        Font* fonts;
-    };
-
     /**
      * Core version of the framework.
      * As of right now this should be multiplatform but if OS specific implementations are required

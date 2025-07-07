@@ -40,6 +40,8 @@ int main()
         world->import<memProfileViewer::RenderingModule>();
         world->import<memProfileViewer::IOStateModule>();
 
+        //Clay_SetDebugModeEnabled(true);
+
         // Start program
         framework.Run(std::move(world));
     }
