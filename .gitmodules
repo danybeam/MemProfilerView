@@ -1,12 +1,12 @@
 [submodule "ext/raylib"]
 	path = ext/raylib
-	url = git@github.com:raysan5/raylib.git
+	url = https://github.com/raysan5/raylib.git
 [submodule "ext/flecs"]
 	path = ext/flecs
-	url = git@github.com:SanderMertens/flecs.git
+	url = https://github.com/SanderMertens/flecs.git
 [submodule "ext/sdl"]
 	path = ext/sdl
-	url = git@github.com:libsdl-org/SDL.git
+	url = https://github.com/libsdl-org/SDL.git
 [submodule "ext/json"]
 	path = ext/json
-	url = git@github.com:nlohmann/json.git
+	url = https://github.com/nlohmann/json.git
