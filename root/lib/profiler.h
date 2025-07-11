@@ -14,7 +14,7 @@
 // You will probably want to macro-fy this, to switch on/off easily and use things like __FUNCSIG__ for the profile name.
 //
 // ReSharper disable CppParameterMayBeConstPtrOrRef
-// ReSharper disable CppClangTidyClangDiagnosticInlineNewDelete
+// ReSharper disable CppClangTidyClangDiagnosticNewDelete
 // ReSharper disable CppParameterNamesMismatch
 // ReSharper disable CppClangTidyCppcoreguidelinesSpecialMemberFunctions
 #pragma once
@@ -31,6 +31,7 @@
 #include <thread>
 #include <unordered_map>
 
+
 /*
  * Known issues:
  * - The profiling macro needs to be the first thing in the scope to make sure it gets freed last.
@@ -38,7 +39,6 @@
  * - This has not been tested in multithreaded apps.
  *     - Even if it could work out of the box IDK what settings should be used. 
  */
-
 
 /**
  * Mutex-like object to avoid infinite recursion when calling new or delete
@@ -110,6 +110,9 @@ private:
     /**< Semaphore counter for the lock. Should be defined as one, more than one would work, but it would just get consumed when creating the stack trace. @remark This should change if this becomes multithreaded. IDK how it would behave*/
     static bool forceLock_; /**< Bool to control whether to override the status of the lock and force it.*/
 };
+
+uint8_t ProfileLock::semaphore_ = 1; // Necessary to define saveProfiling
+bool ProfileLock::forceLock_ = false;
 
 /**
  * Struct to store the result of a timer profiling
@@ -648,23 +651,16 @@ inline void operator delete[](void* block, const std::nothrow_t& tag) noexcept
     block = nullptr;
 }
 
-
 /*
- * These preprocessors are used to simplify the creation of the profiler objects.
+* These preprocessors are used to simplify the creation of the profiler objects.
  */
 // The "if" preprocessor command and the macro commands are a mix of Cherno and danybeam (me)
 // Regardless of the copyright notice on modified versions of the code in the code the section bellow should be considered under the MIT license.
-#if PROFILE
-#define PROFILE_SCOPE_MEMORY(name) ProfileLock::RequestForceLock();InstrumentationMemory memoryProfiler##__LINE__(name);ProfileLock::RequestForceUnlock();
-#define PROFILE_SCOPE_TIME(name) InstrumentationTimer timer##__LINE__(name)
+#pragma once
+#define PROFILE_SCOPE_MEMORY(name) ProfileLock::RequestForceLock();InstrumentationMemory memoryProfiler##__LINE__##(name);ProfileLock::RequestForceUnlock();
+#define PROFILE_SCOPE_TIME(name) InstrumentationTimer timer##__LINE__##(name)
 #define PROFILE_FUNCTION_TIME() PROFILE_SCOPE(__FUNCSIG__)
 #define START_SESSION(name)  Instrumentor::Get().BeginSession(name)
 #define END_SESSION()  Instrumentor::Get().EndSession()
-#else
-#define PROFILE_SCOPE_MEMORY(name)
-#define PROFILE_SCOPE_TIME(name)
-#define PROFILE_FUNCTION_TIME()
-#define START_SESSION(name)
-#define END_SESSION()
-#endif
+
 #pragma warning(pop)

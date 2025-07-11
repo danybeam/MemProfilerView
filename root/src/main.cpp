@@ -1,7 +1,8 @@
 #include <FWCore.h>
 #include <flecs.h>
+#include <stdexcept>
 
-#include <utils/profiler.h>
+#include <profiler.h>
 
 import FilesModule;
 import ProfilingRenderer;

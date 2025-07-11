@@ -33,6 +33,7 @@ uint32_t fw::FWCore::Run(std::unique_ptr<flecs::world>&& world)
 {
     m_world_ = std::move(world);
 
+
     // This needs to be added during run to ensure the fonts are loaded properly
     m_world_->emplace<LoadedFonts>(m_clay_font_);
 
@@ -204,7 +205,7 @@ void fw::FWCore::Clay_startDrawing(flecs::iter& iter, size_t)
 {
     Clay_BeginLayout();
     BeginDrawing();
-    ClearBackground({255, 255, 255, 255});
+    ClearBackground({0, 0, 0, 255});
 }
 
 void fw::FWCore::Clay_endDrawing(flecs::iter& iter, size_t, const LoadedFonts& fonts)

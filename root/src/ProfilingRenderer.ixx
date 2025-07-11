@@ -2,11 +2,13 @@
 
 // Includes that don't play as nicely with the import mechanics
 #include <flecs.h>;
-#include <utils/profiler.h>
 #include <raylib.h>;
+#include <unordered_map>
+#include <format>
 
 #pragma warning( push, 0 )
 #include <Clay/clay.h>
+
 #pragma warning( pop )
 
 export module ProfilingRenderer;
@@ -65,7 +67,7 @@ Texture createTimeBarTexture(Font& font);
 /**
  * Temporary(?) cache of textures representing the bars depending on how long it was allocated for
  */
-static std::unordered_map<double, Texture> cachedImages;
+static std::unordered_map<double, Texture> cachedImages = {};
 static double maxDuration = -99999;
 static Texture timeBar;
 
@@ -94,7 +96,7 @@ void renderFileResults(flecs::iter& it, size_t, memProfileViewer::File_Holder& f
         return;
     }
 
-    ProfileLock::RequestForceLock();
+    //ProfileLock::RequestForceLock();
 
     Clay_ElementDeclaration t_baseFrame = {};
     t_baseFrame.id = CLAY_ID("BaseFrame");
@@ -107,7 +109,6 @@ void renderFileResults(flecs::iter& it, size_t, memProfileViewer::File_Holder& f
         .top = 8,
         .bottom = 8
     };
-    //t_baseFrame.clip = {.horizontal = false, .vertical = true, .childOffset = ioState_component.mouse_wheel};
 
     Clay_ElementDeclaration t_addressHolder = {};
     t_addressHolder.id = CLAY_ID("AddressHolder");
@@ -137,56 +138,6 @@ void renderFileResults(flecs::iter& it, size_t, memProfileViewer::File_Holder& f
     // TODO(danybeam) move image cache to component and attach to singleton 
     CLAY(t_baseFrame)
     {
-        /*unsigned char entryId = 0;
-        for (auto& entry : file.entries)
-        {
-            t_EntryFrame.id = CLAY_IDI("Entry", entryId++);
-            CLAY(t_EntryFrame)
-            {
-                Clay_String t_memAddress = {};
-                t_memAddress.chars = entry.memLocation.c_str();
-                t_memAddress.length = entry.memLocation.length();
-                t_memAddress.isStaticallyAllocated = false;
-
-                CLAY_TEXT(
-                    t_memAddress,
-                    CLAY_TEXT_CONFIG({
-                        .userData = nullptr,
-                        .textColor = {255, 255, 0, 255},
-                        .fontId = FONT_WEIGHT::FONT_REGULAR,
-                        .fontSize = 32,
-                        .letterSpacing = 0,
-                        .lineHeight = 0,
-                        .wrapMode = CLAY_TEXT_WRAP_WORDS,
-                        .textAlignment = CLAY_TEXT_ALIGN_CENTER,
-                        })
-                );
-
-                if (auto memoryBar = cachedImages.find(entry.duration); memoryBar == cachedImages.end())
-                {
-                    //Image generatedImage = GenImageColor(entry.duration, 20, {230, 41, 50, 255});
-                    Image generatedImage = GenImageGradientLinear(entry.duration, 20, 90, {230, 41, 50, 255},
-                                                                  {0, 41, 255, 255});
-                    Texture texture = LoadTextureFromImage(generatedImage);
-                    cachedImages[entry.duration] = texture;
-                    UnloadImage(generatedImage);
-                }
-
-                Texture& imageRef = cachedImages[entry.duration];
-                Clay_ElementDeclaration t_bar = {};
-                t_bar.id = CLAY_IDI("Bar", entryId);
-                t_bar.layout.sizing = {
-                    .width = CLAY_SIZING_FIXED(static_cast<float>(imageRef.width)),
-                    .height = CLAY_SIZING_FIXED(static_cast<float>(imageRef.height))
-                };
-                t_bar.image.imageData = &imageRef;
-
-                CLAY(t_bar)
-                {
-                }
-            }
-        }*/
-
         CLAY(t_addressHolder)
         {
             // Empty element to make space for the time bar
@@ -219,6 +170,9 @@ void renderFileResults(flecs::iter& it, size_t, memProfileViewer::File_Holder& f
 
         CLAY(t_entryBars)
         {
+            //Clay_SetDebugModeEnabled(true);
+            double testIndex = 0;
+
             // TODO(danybeam) generate time bar for reference
             // Empty element while I make the time bar
             Clay_ElementDeclaration t_timeBarConfig = {};
@@ -237,69 +191,84 @@ void renderFileResults(flecs::iter& it, size_t, memProfileViewer::File_Holder& f
 
             for (auto& entry : file.entries)
             {
+                Clay_ElementDeclaration test = {};
+
+                if (!cachedImages.contains(testIndex))
+                {
+                    Image testImage = GenImageGradientLinear(200, 32, 90, {0, 255, 0, 255}, {255, 0, 0, 255});
+                    cachedImages.insert_or_assign(testIndex++, LoadTextureFromImage(testImage));
+                    UnloadImage(testImage);
+                }
+
+                test.image.imageData = &cachedImages[testIndex];
+                test.layout.sizing = {
+                    .width = CLAY_SIZING_FIXED(static_cast<float>(cachedImages[testIndex].width)),
+                    .height = CLAY_SIZING_FIXED(static_cast<float>(cachedImages[testIndex].height)),
+                };
+
+                CLAY(test)
+                {
+                }
+            }
+
+            for (auto& entry : file.entries)
+            {
                 double prev_maxDuration = maxDuration;
-                Clay_ElementDeclaration t_entry = {};
+                // TODO(danybeam) delete after testing
+                static Clay_ElementDeclaration t_entry = {};
 
                 if (entry.duration < 0.0)
                 {
                     t_entry.backgroundColor = {.r = 255, .g = 0, .b = 0, .a = 255};
-                    t_entry.layout.sizing.width = CLAY_SIZING_GROW(32);
+                    //t_entry.layout.sizing.width = CLAY_SIZING_FIXED(static_cast<float>(maxDuration));
                     t_entry.layout.sizing.height = CLAY_SIZING_FIXED(32);
                 }
                 else
                 {
-                    if (auto memoryBar = cachedImages.find(entry.duration); memoryBar == cachedImages.end())
+                    if (!cachedImages.contains(entry.duration))
                     {
                         maxDuration = std::max(maxDuration, entry.duration);
                         //Image generatedImage = GenImageColor(entry.duration, 20, {230, 41, 50, 255});
-                        Image generatedImage = GenImageGradientLinear(entry.duration, 32, 90, {0, 150, 50, 255},
-                                                                      {0, 255, 255, 255});
-                        Texture texture = LoadTextureFromImage(generatedImage);
-                        cachedImages[entry.duration] = texture;
+                        Image generatedImage = GenImageGradientLinear((int)entry.duration, 32, 90, {0, 255, 0, 255},
+                                                                     {255, 0, 255, 255});
+                        cachedImages.insert_or_assign(entry.duration,LoadTextureFromImage(generatedImage));
                         UnloadImage(generatedImage);
                     }
 
-                    Texture& imageRef = cachedImages[entry.duration];
+                    t_entry.image.imageData = &cachedImages[entry.duration];
                     t_entry.layout.sizing = {
-                        .width = CLAY_SIZING_FIXED(static_cast<float>(imageRef.width)),
-                        .height = CLAY_SIZING_FIXED(static_cast<float>(imageRef.height))
+                        .width = CLAY_SIZING_FIXED(static_cast<float>(cachedImages[entry.duration].width)),
+                        .height = CLAY_SIZING_FIXED(static_cast<float>(cachedImages[entry.duration].height))
                     };
-                    t_entry.image.imageData = &imageRef;
-                }
-
-                if (prev_maxDuration != maxDuration)
-                {
-                    auto& loadedFonts = it.world().get<LoadedFonts>();
-                    UnloadTexture(timeBar); // unload the previous bar texture
-                    timeBar = createTimeBarTexture(loadedFonts.fonts[FONT_WEIGHT::FONT_REGULAR]);
                 }
 
                 CLAY(t_entry)
                 {
                 }
+
+                if (prev_maxDuration != maxDuration)
+                {
+                    auto& loadedFonts = it.world().get<LoadedFonts>();
+                    if (IsTextureValid(timeBar))
+                    {
+                        UnloadTexture(timeBar); // unload the previous bar texture
+                    }
+                    timeBar = createTimeBarTexture(loadedFonts.fonts[FONT_WEIGHT::FONT_REGULAR]);
+                }
             }
         }
     }
 
-    ProfileLock::RequestForceUnlock();
+    // ProfileLock::RequestForceUnlock();
 }
 
 Texture createTimeBarTexture(Font& font)
 {
     Texture result = {};
 
-    long long imageWidth = maxDuration + 100;
+    long long imageWidth = maxDuration;
 
     Image temp_image = GenImageColor(imageWidth, 32, {0, 0, 255, 255});
-    /*ImageDrawTextEx(
-        &temp_image,
-        font,
-        "| 0ms",
-        {0, 0},
-        32,
-        0,
-        {255, 255, 255, 255}
-    );*/
 
     for (long long i = 0; i < imageWidth; i += 200)
     {

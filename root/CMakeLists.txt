@@ -3,8 +3,55 @@
 #
 cmake_minimum_required (VERSION 3.28)
 
+
+
+###################################################################
+##              Library for the profiler
+###################################################################
+
+add_library(${CMAKE_PROJECT_NAME}_lib)
+
+file(GLOB_RECURSE LIB_IXX
+	"lib/*.ixx"
+)
+
+file(GLOB_RECURSE LIB_HDR
+	"lib/*.h"
+)
+
+target_sources(${CMAKE_PROJECT_NAME}_lib 
+PRIVATE
+	${LIB_HDR}
+PRIVATE FILE_SET CXX_MODULES FILES # Needed for modules
+	${LIB_IXX}
+)
+
+target_include_directories(${CMAKE_PROJECT_NAME}_lib PUBLIC
+	"lib"
+)
+
+# Separate source groups
+source_group("lib" FILES
+${LIB_IXX}
+${LIB_HDR}
+)
+
+# set CPP version
+set_target_properties(${CMAKE_PROJECT_NAME}_lib PROPERTIES LINKER_LANGUAGE CXX)
+set_property(TARGET ${CMAKE_PROJECT_NAME}_lib PROPERTY CXX_STANDARD 23)
+
+add_library(${CMAKE_PROJECT_NAME}::lib ALIAS ${CMAKE_PROJECT_NAME}_lib)
+
+###################################################################
+##              Executable for the viewer
+##  - TODO(danybeam) add options to compile lib only
+##  - TODO(danybeam) add "installation" for executable
+###################################################################
+
+
 # Define executable
-add_executable (${CMAKE_PROJECT_NAME})
+add_executable(${CMAKE_PROJECT_NAME})
+
 
 # executable options
 option(PROFILING "Whether to activate profiling in the project" ON)
@@ -81,6 +128,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
 	SDL3::SDL3 # the ext CMakeLists specifies raylib to compile using SDL publicly but here we're linking it directly to avoid potential breaking changes 
 	flecs_static
 	nlohmann_json::nlohmann_json
+	${CMAKE_PROJECT_NAME}::lib
 )
 
 # set CPP version
