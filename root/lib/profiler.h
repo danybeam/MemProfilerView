@@ -111,9 +111,6 @@ private:
     static bool forceLock_; /**< Bool to control whether to override the status of the lock and force it.*/
 };
 
-uint8_t ProfileLock::semaphore_ = 1; // Necessary to define saveProfiling
-bool ProfileLock::forceLock_ = false;
-
 /**
  * Struct to store the result of a timer profiling
  */

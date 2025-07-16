@@ -264,7 +264,7 @@ namespace fw
         /**
          * How much the mouse wheel got displaced.
          */
-        memProfileViewer::Vector2 m_mouse_wheel_ = {0,0};
+        memProfileViewer::Vector2 m_mouse_wheel_ = {0, 0};
         /**
          * The state of the keys the frame before
          */

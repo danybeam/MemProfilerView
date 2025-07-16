@@ -11,6 +11,9 @@
 #include <flecs.h>
 #include <iostream>
 #include <SDL.h>
+#include <external/glad.h>
+
+#include <Constants.h>
 
 import utils;
 import ProfilingRenderer;
@@ -130,6 +133,7 @@ bool fw::FWCore::InitClay()
 
     Clay_Initialize(m_clay_memoryArena_, m_clay_resolution_, m_clay_errorHandler_);
     Clay_SetMeasureTextFunction(Raylib_MeasureText, m_clay_font_);
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
     return true;
 }
 
