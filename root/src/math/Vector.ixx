@@ -8,7 +8,7 @@ export module Maths:Vector;
 
 import <algorithm>;
 
-export namespace memProfileViewer
+export namespace mem_profile_viewer
 {
     /**
      * Enum to indicate which dimension(s) to clamp
@@ -19,7 +19,7 @@ export namespace memProfileViewer
         X_DIMENSION,
         Y_DIMENSION,
     };
-    
+
     /**
      * Class to hold a 2-dimensional vector
      */
@@ -57,7 +57,12 @@ export namespace memProfileViewer
          */
         Vector2 operator *(const int& rhs) const
         {
-            return Vector2(this->x*rhs, this->y*rhs);
+            return Vector2(this->x * rhs, this->y * rhs);
+        }
+
+        Vector2 operator -(const Vector2& rhs) const
+        {
+            return Vector2(this->x - rhs.x, this->y - rhs.y);
         }
 
         /**
@@ -73,23 +78,34 @@ export namespace memProfileViewer
          * @param dimension which dimension to clamp the vector on
          */
         void Clamp(float min, float max = .0f, CLAMP_DIMENSION dimension = CLAMP_DIMENSION::BOTH_DIMENSIONS);
+        /**
+         * Clamp a vector so that its components are not lower than min nor bigger than max. This returns a new vector
+         * @param min minimum value for the vector components
+         * @param max maximum value for the vector components
+         * @param dimension which dimension to clamp the vector on
+         */
+        Vector2 Clamped(float min, float max = .0f, CLAMP_DIMENSION dimension = CLAMP_DIMENSION::BOTH_DIMENSIONS) const;
     };
 }
 
-void memProfileViewer::Vector2::Clamp(float min, float max, CLAMP_DIMENSION dimension)
+void mem_profile_viewer::Vector2::Clamp(float min, float max, CLAMP_DIMENSION dimension)
 {
     if (dimension == CLAMP_DIMENSION::BOTH_DIMENSIONS || dimension == CLAMP_DIMENSION::X_DIMENSION)
     {
-        // TODO(danybeam) this was to have clamped min but unclamped max but it needs to be more explicit
-        float minValue = min == 0 ? this->x - 100 : min;
-        float maxValue = max == 0 ? this->x + 100 : max;
-        this->x = std::clamp(this->x, minValue, maxValue);
+        this->x = std::clamp(this->x, min, max);
     }
 
     if (dimension == CLAMP_DIMENSION::BOTH_DIMENSIONS || dimension == CLAMP_DIMENSION::Y_DIMENSION)
     {
-        float minValue = min == 0 ? this->y - 100 : min;
-        float maxValue = max == 0 ? this->y + 100 : max;
-        this->y = std::clamp(this->y, minValue, maxValue);
+        this->y = std::clamp(this->y, min, max);
     }
+}
+
+mem_profile_viewer::Vector2 mem_profile_viewer::Vector2::Clamped(float min, float max, CLAMP_DIMENSION dimension) const
+{
+    Vector2 result = *this;
+
+    result.Clamp(min, max, dimension);
+
+    return result;
 }

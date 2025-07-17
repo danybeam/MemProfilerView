@@ -37,9 +37,9 @@ int main()
         // Creates REST server on default port (27750)
         world->set<flecs::Rest>({});
 
-        world->import<memProfileViewer::FilesModule>();
-        world->import<memProfileViewer::RenderingModule>();
-        world->import<memProfileViewer::IOStateModule>();
+        world->import<mem_profile_viewer::FilesModule>();
+        world->import<mem_profile_viewer::rendering_module>();
+        world->import<mem_profile_viewer::IOStateModule>();
 
         //Clay_SetDebugModeEnabled(true);
 

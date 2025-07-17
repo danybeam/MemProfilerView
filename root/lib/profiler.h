@@ -453,7 +453,7 @@ public:
     {
         if (m_stopped_) return;
 
-        // TODO(danybeam) this explodes when closing
+        // TODO(!danybeam) this explodes when closing
         if (const auto findResult = m_results_.find(address); findResult != m_results_.end())
         {
             findResult->second.end = std::chrono::time_point_cast<std::chrono::microseconds>(

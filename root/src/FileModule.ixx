@@ -20,7 +20,7 @@ using json = nlohmann::json;
 /**
  * Namespace for the project
  */
-export namespace memProfileViewer
+export namespace mem_profile_viewer
 {
     /**
      * flecs module declaration
@@ -84,6 +84,25 @@ export namespace memProfileViewer
             callstack(callstack)
         {
         }
+
+        bool operator==(const Memory_TraceEntry& other) const
+        {
+            bool result = true;
+
+            result &= (&this->memLocation == &other.memLocation);
+            result &= (&this->duration == &other.duration);
+            result &= (&this->memSize == &other.memSize);
+            result &= (&this->threadId == &other.threadId);
+            result &= (&this->category == &other.category);
+            result &= (&this->callstack == &other.callstack);
+
+            return result;
+        }
+
+        bool operator!=(const Memory_TraceEntry& other) const
+        {
+            return !(*this == other);
+        }
     };
 
     /**
@@ -113,31 +132,31 @@ module :private;
  * @param it flecs iterator
  * @param file component holding the file information
  */
-void checkFileDropped(flecs::iter& it, size_t, memProfileViewer::File_Holder& file);
+void checkFileDropped(flecs::iter& it, size_t, mem_profile_viewer::File_Holder& file);
 
 // Module implementations
-memProfileViewer::FilesModule::FilesModule(const flecs::world& world)
+mem_profile_viewer::FilesModule::FilesModule(const flecs::world& world)
 {
     // Declare module
-    world.module<memProfileViewer::FilesModule>("FilesModule");
+    world.module<mem_profile_viewer::FilesModule>("FilesModule");
 
     // Describe components
-    world.component<memProfileViewer::File_Holder>("File_Holder")
+    world.component<mem_profile_viewer::File_Holder>("File_Holder")
          .member<std::string>("name")
          .member<std::ofstream>("file");
 
     // Add component to singleton
 
-    world.add<memProfileViewer::File_Holder>();
+    world.add<mem_profile_viewer::File_Holder>();
 
     // define system
-    world.system<memProfileViewer::File_Holder>()
-         .term_at<memProfileViewer::File_Holder>(0).singleton()
+    world.system<mem_profile_viewer::File_Holder>()
+         .term_at<mem_profile_viewer::File_Holder>(0).singleton()
          .kind(flecs::OnUpdate)
          .each(checkFileDropped);
 }
 
-void checkFileDropped(flecs::iter& it, size_t, memProfileViewer::File_Holder& file)
+void checkFileDropped(flecs::iter& it, size_t, mem_profile_viewer::File_Holder& file)
 {
     if (!IsFileDropped())
     {
@@ -170,10 +189,10 @@ void checkFileDropped(flecs::iter& it, size_t, memProfileViewer::File_Holder& fi
     {
         // (CATEGORY category, double duration, std::string& memLocation,
         // unsigned long long threadId, unsigned long long memSize, int vectorSize)
-        memProfileViewer::CATEGORY category = traceEvents[i]["cat"].get<std::string>().find("Deallocated") !=
-                                              std::string::npos
-                                                  ? memProfileViewer::CATEGORY::DEALLOCATED
-                                                  : memProfileViewer::CATEGORY::MEM_LEAK;
+        mem_profile_viewer::CATEGORY category = traceEvents[i]["cat"].get<std::string>().find("Deallocated") !=
+                                                std::string::npos
+                                                    ? mem_profile_viewer::CATEGORY::DEALLOCATED
+                                                    : mem_profile_viewer::CATEGORY::MEM_LEAK;
 
 
         file.entries.emplace_back(

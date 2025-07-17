@@ -18,6 +18,7 @@
 import utils;
 import ProfilingRenderer;
 import IOState;
+import Maths;
 
 fw::FWCore::FWCore(uint32_t width, uint32_t height) :
     m_errorCodes_(NONE),
@@ -38,13 +39,13 @@ uint32_t fw::FWCore::Run(std::unique_ptr<flecs::world>&& world)
 
 
     // This needs to be added during run to ensure the fonts are loaded properly
-    m_world_->emplace<LoadedFonts>(m_clay_font_);
+    m_world_->emplace<loaded_fonts>(m_clay_font_);
 
-    m_world_->system<memProfileViewer::IOState_Component>()
+    m_world_->system<mem_profile_viewer::IOState_Component>()
             .term_at(0).singleton()
             .kind(flecs::OnLoad)
             .each(
-                [=](flecs::iter& iter, size_t row, memProfileViewer::IOState_Component& ioState_component)
+                [=](flecs::iter& iter, size_t row, mem_profile_viewer::IOState_Component& ioState_component)
                 {
                     this->Clay_updateIOState(iter, row, ioState_component);
                 });
@@ -53,7 +54,7 @@ uint32_t fw::FWCore::Run(std::unique_ptr<flecs::world>&& world)
             .kind(flecs::PostLoad)
             .each(&Clay_startDrawing);
 
-    m_world_->system<const LoadedFonts>("End Drawing")
+    m_world_->system<const loaded_fonts>("End Drawing")
             .term_at(0).singleton()
             .kind(flecs::OnStore)
             .each(&Clay_endDrawing);
@@ -197,12 +198,49 @@ bool fw::FWCore::ProcessSDLEvent(SDL_Event* event)
     return true;
 }
 
-void fw::FWCore::Clay_updateIOState(flecs::iter& iter, size_t, memProfileViewer::IOState_Component& ioState_component)
+void fw::FWCore::Clay_updateIOState(flecs::iter& iter, size_t, mem_profile_viewer::IOState_Component& ioState_component)
 {
-    ioState_component.mouse_wheel += this->m_mouse_wheel_ * 10;
-    // ioState_component.mouse_wheel.Clamp(-0.1f,1200.0f);
+    ioState_component.prev_mouse_wheel = ioState_component.current_mouse_wheel;
+    ioState_component.target_mouse_wheel += this->m_mouse_wheel_;
+
+    if (ioState_component.target_mouse_wheel.x != ioState_component.current_mouse_wheel_tween_x.m_target())
+    {
+        ioState_component.current_mouse_wheel_tween_x.start(
+            ioState_component.target_mouse_wheel.x,
+            1.0f, // arbitrary duration
+            mem_profile_viewer::Elastic::Out
+        );
+    }
+
+    if (ioState_component.target_mouse_wheel.y != ioState_component.current_mouse_wheel_tween_y.m_target())
+    {
+        ioState_component.current_mouse_wheel_tween_y.start(
+            ioState_component.target_mouse_wheel.y,
+            1.0f, // arbitrary duration
+            mem_profile_viewer::Elastic::Out
+        );
+    }
+
+    ioState_component.current_mouse_wheel_tween_x.on_update(iter.delta_time());
+    ioState_component.current_mouse_wheel_tween_y.on_update(iter.delta_time());
 
     this->m_mouse_wheel_ = {0, 0};
+
+    Clay_SetLayoutDimensions({
+        static_cast<float>(GetRenderWidth()),
+        static_cast<float>(GetRenderHeight())
+    });
+
+    Clay_SetPointerState(
+        {static_cast<float>(GetMouseX()), static_cast<float>(GetMouseY())},
+        IsMouseButtonDown(0) || IsMouseButtonDown(1)
+    );
+
+    Clay_UpdateScrollContainers(
+        false,
+        ioState_component.current_mouse_wheel - ioState_component.prev_mouse_wheel,
+        iter.delta_time()
+    );
 }
 
 void fw::FWCore::Clay_startDrawing(flecs::iter& iter, size_t)
@@ -212,7 +250,7 @@ void fw::FWCore::Clay_startDrawing(flecs::iter& iter, size_t)
     ClearBackground({0, 0, 0, 255});
 }
 
-void fw::FWCore::Clay_endDrawing(flecs::iter& iter, size_t, const LoadedFonts& fonts)
+void fw::FWCore::Clay_endDrawing(flecs::iter& iter, size_t, const loaded_fonts& fonts)
 {
     auto clay_RenderCommandArray = Clay_EndLayout();
 

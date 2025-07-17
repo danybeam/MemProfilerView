@@ -150,7 +150,7 @@ namespace fw
          * @param iter flecs iterator
          * @param ioState_component component containing the information regarding the state of IO devices 
          */
-        void Clay_updateIOState(flecs::iter& iter, size_t, memProfileViewer::IOState_Component& ioState_component);
+        void Clay_updateIOState(flecs::iter& iter, size_t, mem_profile_viewer::IOState_Component& ioState_component);
 
         /**
          * Flecs system callback to start registering Clay render commands
@@ -163,7 +163,7 @@ namespace fw
          * @param iter flecs iterator
          * @param fonts Reference to the fonts to use for rendering.
          */
-        static void Clay_endDrawing(flecs::iter& iter, size_t, const LoadedFonts& fonts);
+        static void Clay_endDrawing(flecs::iter& iter, size_t, const loaded_fonts& fonts);
 
         /**
          * @}
@@ -264,7 +264,7 @@ namespace fw
         /**
          * How much the mouse wheel got displaced.
          */
-        memProfileViewer::Vector2 m_mouse_wheel_ = {0, 0};
+        mem_profile_viewer::Vector2 m_mouse_wheel_ = {0, 0};
         /**
          * The state of the keys the frame before
          */
