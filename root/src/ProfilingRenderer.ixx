@@ -367,11 +367,31 @@ void render_file_results(
 
     CLAY(t_base_frame)
     {
-        CLAY(t_address_holder)
+        CLAY(
+            {
+            .layout = {
+            .sizing = {
+            .width = CLAY_SIZING_GROW(),
+            .height = CLAY_SIZING_FIXED(constants::profiling_renderer_constants::c_row_height)
+            },
+            .padding = {
+            .left = constants::profiling_renderer_constants::c_element_gap_regular,
+            .right = constants::profiling_renderer_constants::c_element_gap_small,
+            .top = constants::profiling_renderer_constants::c_element_gap_small,
+            .bottom = constants::profiling_renderer_constants::c_element_gap_small
+            },
+            .childGap = constants::profiling_renderer_constants::c_element_gap_regular,
+            .layoutDirection = CLAY_LEFT_TO_RIGHT,
+            },
+            .backgroundColor = constants::profiling_renderer_constants::c_background_color_frame,
+            .floating = {
+            .attachTo = CLAY_ATTACH_TO_PARENT
+            },
+            }
+        )
         {
-            // TODO(_danybeam) make address holder floating
             CLAY_TEXT(
-                CLAY_STRING("Address"),
+                CLAY_STRING("         Address"),
                 CLAY_TEXT_CONFIG({
                     .userData = nullptr,
                     .textColor = constants::profiling_renderer_constants::c_text_color_clay,
@@ -379,10 +399,62 @@ void render_file_results(
                     .fontSize = constants::profiling_renderer_constants::c_font_size,
                     .letterSpacing = constants::profiling_renderer_constants::c_font_letter_spacing,
                     .lineHeight = constants::profiling_renderer_constants::c_font_line_height,
-                    .wrapMode = CLAY_TEXT_WRAP_WORDS,
+                    .wrapMode = CLAY_TEXT_WRAP_NONE,
                     .textAlignment = CLAY_TEXT_ALIGN_CENTER,
                     })
             );
+
+            CLAY(t_vertical_separator)
+            {
+            }
+
+            CLAY(
+                {
+                .layout = {
+                .sizing = {
+                .width = CLAY_SIZING_GROW(),
+                .height = CLAY_SIZING_FIXED(constants::profiling_renderer_constants::c_row_height)
+                },
+                .layoutDirection = CLAY_LEFT_TO_RIGHT,
+                },
+                .clip = {
+                .horizontal = true,
+                .vertical = false,
+                .childOffset = {t_entry_bars.clip.childOffset.x, 0},
+                },
+                }
+            )
+            {
+                for (auto& texture : rendering_cache.timeBar)
+                {
+                    Clay_ElementDeclaration t_imageHolder = {};
+                    t_imageHolder.image.imageData = &texture;
+                    t_imageHolder.layout.sizing = {
+                        .width = CLAY_SIZING_FIXED(static_cast<float>(texture.width)),
+                        .height = CLAY_SIZING_FIXED(static_cast<float>(texture.height))
+                    };
+
+                    CLAY(t_imageHolder)
+                    {
+                    }
+                }
+            }
+        }
+
+        CLAY(t_address_holder)
+        {
+            CLAY(
+                {
+                .layout = {
+                .sizing = {
+                .width = CLAY_SIZING_FIXED(0),
+                .height = CLAY_SIZING_FIXED(constants::profiling_renderer_constants::c_row_height)
+                }
+                }}
+            )
+            {
+                // Empty to fill the gap for the floating element
+            }
 
             CLAY(t_horizontal_separator)
             {
@@ -441,6 +513,10 @@ void render_file_results(
                 t_entry.layout.padding = {.left = 0, .right = 0, .top = 0, .bottom = 0};
                 t_entry.layout.childGap = 0;
                 t_entry.layout.layoutDirection = CLAY_LEFT_TO_RIGHT;
+                t_entry.layout.sizing = {
+                    .width = CLAY_SIZING_GROW(),
+                    .height = CLAY_SIZING_FIXED(constants::profiling_renderer_constants::c_row_height)
+                };
 
                 if (rendering_cache.generateTimebar)
                 {
@@ -451,27 +527,14 @@ void render_file_results(
 
                 CLAY(t_entry)
                 {
-                    // TODO(_danybeam) make time bar floating
-                    for (auto& texture : rendering_cache.timeBar)
-                    {
-                        Clay_ElementDeclaration t_imageHolder = {};
-                        t_imageHolder.image.imageData = &texture;
-                        t_imageHolder.layout.sizing = {
-                            .width = CLAY_SIZING_FIXED(static_cast<float>(texture.width)),
-                            .height = CLAY_SIZING_FIXED(static_cast<float>(texture.height))
-                        };
-
-                        CLAY(t_imageHolder)
-                        {
-                        }
-                    }
+                    // Empty to fill the gap for the floating element
                 }
 
 
                 for (auto& entry : file.entries)
                 {
                     t_entry.backgroundColor = constants::profiling_renderer_constants::c_transparent_color;
-                    
+
                     if (entry.duration < 0)
                     {
                         t_entry.layout.sizing = {
