@@ -38,6 +38,7 @@ namespace constants::profiling_renderer_constants
     constexpr int c_time_jump = 200;
 
     constexpr Clay_Color c_background_color_frame = {55, 55, 55, 255};
+    constexpr Clay_Color c_transparent_color = {255, 255, 255, 0};
     constexpr Clay_Color c_background_color_separator = {85, 85, 85, 255};
     constexpr Clay_Color c_background_color_error = {185, 0, 0, 255};
     constexpr Color c_timebar_color_deallocated = {0, 185, 0, 255};
@@ -284,15 +285,24 @@ void update_ui_elements(
 
     // Update the children offset
     // Address bar only scrolls vertically
+    auto& rendering_cache = it.world().get<mem_profile_viewer::rendering_cache>();
+
+    // The offsets are technically backwards, but it makes it so that 2 wrongs make a right.
+    // I'm leaving it as is for now
     mem_profile_viewer::Vector2 offset = (address_holder.reference_scroll_offset - address_holder.
         current_scroll_offset);
     address_holder.config.clip.childOffset = {
         0,
         offset.y
     };
-    
+
     // simpler as it scrolls in 2 directions
     offset = bar_holder.reference_scroll_offset - bar_holder.current_scroll_offset;
+    offset.Clamp(
+        rendering_cache.maxDuration > 0 ? GetScreenWidth() / 2 - rendering_cache.maxDuration : -1,
+        0,
+        mem_profile_viewer::CLAMP_DIMENSION::X_DIMENSION
+    );
     bar_holder.config.clip.childOffset = offset;
 }
 
@@ -359,6 +369,7 @@ void render_file_results(
     {
         CLAY(t_address_holder)
         {
+            // TODO(_danybeam) make address holder floating
             CLAY_TEXT(
                 CLAY_STRING("Address"),
                 CLAY_TEXT_CONFIG({
@@ -440,6 +451,7 @@ void render_file_results(
 
                 CLAY(t_entry)
                 {
+                    // TODO(_danybeam) make time bar floating
                     for (auto& texture : rendering_cache.timeBar)
                     {
                         Clay_ElementDeclaration t_imageHolder = {};
@@ -458,6 +470,8 @@ void render_file_results(
 
                 for (auto& entry : file.entries)
                 {
+                    t_entry.backgroundColor = constants::profiling_renderer_constants::c_transparent_color;
+                    
                     if (entry.duration < 0)
                     {
                         t_entry.layout.sizing = {
@@ -583,7 +597,7 @@ void create_time_bar_texture(Font& font, mem_profile_viewer::rendering_cache& re
     auto image = GenImageColor(
         static_cast<int>(image_width) % fw::maxTextureSize,
         constants::profiling_renderer_constants::c_row_height,
-        constants::profiling_renderer_constants::c_text_color_raylib
+        constants::profiling_renderer_constants::c_timebar_color_timeline
     );
 
     for (int j = 0; j < image.width; j += constants::profiling_renderer_constants::c_time_jump)
