@@ -7,8 +7,8 @@
 #include <memory>
 #include <raylib.h>
 
-import IOState;
 import Maths;
+import IOState;
 import ProfilingRenderer;
 
 /**
@@ -233,7 +233,6 @@ namespace fw
 
         /**
          * Error codes generated while initializing
-         * @todo modify error codes while in execution?
          */
         uint8_t m_errorCodes_;
 
@@ -264,7 +263,16 @@ namespace fw
         /**
          * How much the mouse wheel got displaced.
          */
-        mem_profile_viewer::Vector2 m_mouse_wheel_ = {0, 0};
+        mem_profile_viewer::Vector2 m_mouse_wheel_ = {0,0};
+        /**
+         * Where to return the mouse acceleration to
+         */
+        static constexpr float mouse_wheel_acceleration_base = 5.0f;
+        /**
+         * How much to accelerate the mouse
+         */
+        float mouse_wheel_acceleration_ = mouse_wheel_acceleration_base;
+
         /**
          * The state of the keys the frame before
          */

@@ -28,10 +28,13 @@ export namespace mem_profile_viewer
      */
     struct IOState_Component
     {
-        mem_profile_viewer::Vector2 prev_mouse_wheel = {0,0}; /**< How much the mouse whell was scrolled last frame */
-        mem_profile_viewer::Vector2 current_mouse_wheel = {0,0}; /**< How much the mouse whell has scrolled */
+        static constexpr float mouse_wheel_acceleration_base = 5.0f;
+        float mouse_wheel_acceleration = 5.0f;
+        mem_profile_viewer::Vector2 prev_mouse_wheel = {0,0}; /**< How much the mouse wheel was scrolled last frame */
+        mem_profile_viewer::Vector2 current_mouse_wheel = {0,0}; /**< How much the mouse wheel has scrolled */
         mem_profile_viewer::Vector2 target_mouse_wheel = {0,0}; /**< where we want the mouse wheel to be */
 
+        Tween mouse_wheel_acceleration_tween = Tween(mouse_wheel_acceleration);
         Tween current_mouse_wheel_tween_x = Tween(current_mouse_wheel.x);
         Tween current_mouse_wheel_tween_y = Tween(current_mouse_wheel.y);
     };

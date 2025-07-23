@@ -1,11 +1,13 @@
 ﻿#include "FWCore.h"
 
 #pragma warning( push, 0 )
+
 #define CLAY_IMPLEMENTATION
 #define RAYMATH_IMPLEMENTATION
 
 #include <Clay/clay.h>
 #include <Clay/clay_renderer_raylib.cpp>  // NOLINT(bugprone-suspicious-include)
+
 #pragma warning( pop )
 
 #include <flecs.h>
@@ -15,13 +17,15 @@
 
 #include <Constants.h>
 
-import utils;
-import ProfilingRenderer;
 import IOState;
-import Maths;
+import ProfilingRenderer;
+import utils;
 
 fw::FWCore::FWCore(uint32_t width, uint32_t height) :
     m_errorCodes_(NONE),
+    m_mouse_wheel_(0, 0),
+    mouse_wheel_acceleration_(fw::FWCore::mouse_wheel_acceleration_base),
+    //mouse_wheel_acceleration_tween_(mouse_wheel_acceleration_),
     m_window_client_height_(height),
     m_window_client_width_(width)
 {
@@ -185,10 +189,17 @@ bool fw::FWCore::ProcessSDLEvent(SDL_Event* event)
     switch (event->type)
     {
     case SDL_EVENT_MOUSE_WHEEL:
-        SDL_Log("SDL_EVENT_MOUSE_WHEEL");
-        SDL_Log("x %f y %f flipped", event->wheel.x, event->wheel.y, event->wheel.direction);
-        m_mouse_wheel_.x += event->wheel.x;
-        m_mouse_wheel_.y += event->wheel.y;
+        {
+            SDL_Log("SDL_EVENT_MOUSE_WHEEL");
+            SDL_Log("x %f y %f flipped", event->wheel.x, event->wheel.y, event->wheel.direction);
+
+            this->mouse_wheel_acceleration_++;
+
+            float acceleration = this->mouse_wheel_acceleration_;
+
+            m_mouse_wheel_.x += event->wheel.x * acceleration;
+            m_mouse_wheel_.y += event->wheel.y * acceleration;
+        }
         break;
     default:
         SDL_Log("Unknown Event");
@@ -202,6 +213,8 @@ void fw::FWCore::Clay_updateIOState(flecs::iter& iter, size_t, mem_profile_viewe
 {
     ioState_component.prev_mouse_wheel = ioState_component.current_mouse_wheel;
     ioState_component.target_mouse_wheel += this->m_mouse_wheel_;
+
+    ioState_component.target_mouse_wheel.Clamp(0, std::numeric_limits<float>::infinity());
 
     if (ioState_component.target_mouse_wheel.x != ioState_component.current_mouse_wheel_tween_x.m_target())
     {
@@ -221,10 +234,22 @@ void fw::FWCore::Clay_updateIOState(flecs::iter& iter, size_t, mem_profile_viewe
         );
     }
 
+    if (this->mouse_wheel_acceleration_ - ioState_component.mouse_wheel_acceleration > 0.5f)
+    {
+        ioState_component.mouse_wheel_acceleration = this->mouse_wheel_acceleration_;
+        ioState_component.mouse_wheel_acceleration_tween.start(
+            ioState_component.mouse_wheel_acceleration_base,
+            1.0f, // arbitrary duration
+            mem_profile_viewer::Elastic::Out
+        );
+    }
+
     ioState_component.current_mouse_wheel_tween_x.on_update(iter.delta_time());
     ioState_component.current_mouse_wheel_tween_y.on_update(iter.delta_time());
+    ioState_component.mouse_wheel_acceleration_tween.on_update(iter.delta_time());
 
     this->m_mouse_wheel_ = {0, 0};
+    this->mouse_wheel_acceleration_ = ioState_component.mouse_wheel_acceleration;
 
     Clay_SetLayoutDimensions({
         static_cast<float>(GetRenderWidth()),

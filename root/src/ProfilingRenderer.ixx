@@ -284,12 +284,16 @@ void update_ui_elements(
 
     // Update the children offset
     // Address bar only scrolls vertically
+    mem_profile_viewer::Vector2 offset = (address_holder.reference_scroll_offset - address_holder.
+        current_scroll_offset);
     address_holder.config.clip.childOffset = {
         0,
-        address_holder.reference_scroll_offset.y - address_holder.current_scroll_offset.y
+        offset.y
     };
+    
     // simpler as it scrolls in 2 directions
-    bar_holder.config.clip.childOffset = bar_holder.reference_scroll_offset - bar_holder.current_scroll_offset;
+    offset = bar_holder.reference_scroll_offset - bar_holder.current_scroll_offset;
+    bar_holder.config.clip.childOffset = offset;
 }
 
 void render_file_results(
