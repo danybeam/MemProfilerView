@@ -170,6 +170,12 @@ void checkFileDropped(flecs::iter& it, size_t, mem_profile_viewer::File_Holder& 
     }
 
     std::string filepath = filePaths.paths[0];
+
+    if (filepath == file.name)
+    {
+        return; // already processed
+    }
+    
     if (file.file.is_open())
     {
         file.file.close();
@@ -204,4 +210,6 @@ void checkFileDropped(flecs::iter& it, size_t, mem_profile_viewer::File_Holder& 
             traceEvents[i]["callStack"].get<std::vector<std::string>>()
         );
     }
+
+    UnloadDroppedFiles(filePaths);
 }
