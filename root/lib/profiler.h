@@ -453,7 +453,8 @@ public:
     {
         if (m_stopped_) return;
 
-        // TODO(!danybeam) this explodes when closing
+        // This used to explode after closing the window, but it doesn't anymore.
+        // I(danybeam) cannot get it to reproduce anymore. If someone can  please fill up an issue in the repo.
         if (const auto findResult = m_results_.find(address); findResult != m_results_.end())
         {
             findResult->second.end = std::chrono::time_point_cast<std::chrono::microseconds>(
