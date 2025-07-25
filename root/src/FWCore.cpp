@@ -85,8 +85,14 @@ uint32_t fw::FWCore::Run(std::unique_ptr<flecs::world>&& world)
         // update the world before resetting the mouse wheel.
         // I really didn't want to make a whole new system just for that.
     }
-    while (m_world_->progress(deltaTime) && !WindowShouldClose());
-    
+    while (!WindowShouldClose() && m_world_->progress(deltaTime));
+
+    // Request unlock to register all the pending deallocs properly
+    // This should not be necessary if I put the flecs world in immediate mode
+    // and turned deffer mode off and on again in the rendering system
+    // However I decided to not do that as it would need to be done on all systems when ultimately
+    // it doesn't matter exactly how long memory was allocated for, as much as whether it got cleaned or not. 
+    ProfileLock::RequestForceUnlock();
     return 0;
 }
 
