@@ -17,6 +17,8 @@
 
 #include <Constants.h>
 
+#include "profiler.h"
+
 import IOState;
 import ProfilingRenderer;
 import utils;
@@ -83,8 +85,8 @@ uint32_t fw::FWCore::Run(std::unique_ptr<flecs::world>&& world)
         // update the world before resetting the mouse wheel.
         // I really didn't want to make a whole new system just for that.
     }
-    while (!WindowShouldClose() && m_world_->progress(deltaTime));
-
+    while (m_world_->progress(deltaTime) && !WindowShouldClose());
+    
     return 0;
 }
 
